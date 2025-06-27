@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>App Educativa Infantil</title>
+  <style>
+    body {font-family:'Comic Sans MS',cursive;background:#f0f0f5;margin:0;text-align:center}
+    h1{background:#6a1b9a;color:#fff;padding:15px 0;margin:0 0 10px}
+    nav button{font-size:18px;margin:5px;padding:10px 15px;border:none;border-radius:8px;background:#9575cd;color:#fff;cursor:pointer}
+    nav button.active{background:#5e35b1}
+    .section{display:none;padding:20px}
+    .section.active{display:block}
+    #letras-container{display:grid;grid-template-columns:repeat(auto-fit,minmax(40px,1fr));gap:10px;max-width:700px;margin:10px auto}
+    .letra-btn{font-size:22px;padding:10px 0;background:#d1c4e9;border:none;border-radius:8px;cursor:pointer;user-select:none;transition:background .3s}
+    .letra-btn:hover{background:#b39ddb}
+    #letra-grande{font-size:80px;margin:15px 0 10px}
+    #palabra{font-size:28px;margin-bottom:20px;color:#333}
+    .imagenes-seleccion{display:flex;justify-content:center;gap:40px;margin-bottom:10px;align-items:center}
+    .imagenes-seleccion img{width:200px;height:200px;object-fit:contain;border:4px solid #ccc;border-radius:12px;cursor:pointer}
+    #feedback{height:30px;font-size:20px;font-weight:bold;margin-bottom:15px}
+    canvas{border:2px solid #333;background:#fff;margin-top:10px;touch-action:none}
+    .ejercicio{background:#e1bee7;margin:10px auto;padding:15px;max-width:260px;border-radius:12px;font-size:24px;font-weight:bold}
+    .ejercicio input{font-size:22px;width:80px;text-align:center;margin-left:10px}
+  </style>
+</head>
+<body>
+<h1>App Educativa Infantil</h1>
+<nav>
+  <button data-section="abc"   onclick="mostrarSeccion('abc')"   class="active">Abecedario</button>
+  <button data-section="sumas" onclick="mostrarSeccion('sumas')">Sumas</button>
+  <button data-section="restas"onclick="mostrarSeccion('restas')">Restas</button>
+  <button data-section="dictado"onclick="mostrarSeccion('dictado')">Dictado</button>
+</nav>
+<!-- ABECEDARIO -->
+<div id="abc" class="section active">
+  <div id="letras-container"></div>
+  <div id="contenido-abc">
+    <div id="letra-grande"></div>
+    <div id="palabra"></div>
+    <div class="imagenes-seleccion">
+      <img id="imagen-real"  alt="Imagen real" />
+      <img id="imagen-falsa" alt="Imagen falsa" />
+    </div>
+    <div id="feedback"></div>
+    <canvas id="pizarra-abc" width="500" height="260"></canvas><br>
+    <button onclick="limpiarPizarra('abc')">Limpiar dibujo</button>
+  </div>
+</div>
+<!-- SUMAS -->
+<div id="sumas" class="section">
+  <h2>Sumas</h2>
+  <div style="margin-bottom:10px">
+    <button onclick="generarSumas()">🔁 Cambiar sumas</button>
+    <button onclick="verificarTodas('suma')">✔️ Comprobar</button>
+  </div>
+  <div id="sumas-contenedor" style="display:flex;gap:20px;justify-content:center">
+    <div id="suma-columna-1"></div>
+    <div id="suma-columna-2"></div>
+  </div>
+</div>
+<!-- RESTAS -->
+<div id="restas" class="section">
+  <h2>Restas</h2>
+  <div style="margin-bottom:10px">
+    <button onclick="generarRestas()">🔁 Cambiar restas</button>
+    <button onclick="verificarTodas('resta')">✔️ Comprobar</button>
+  </div>
+  <div id="restas-contenedor" style="display:flex;gap:20px;justify-content:center">
+    <div id="resta-columna-1"></div>
+    <div id="resta-columna-2"></div>
+  </div>
+</div>
+<!-- DICTADO -->
+<div id="dictado" class="section">
+  <h2>Dictado</h2>
+  <div style="margin-bottom:10px">
+    <button onclick="escucharDictado()">🔊 Escuchar</button>
+    <button onclick="nuevoDictado()">➡️ Nueva oración</button>
+  </div>
+  <canvas id="pizarra-dictado" width="500" height="260"></canvas><br>
+  <button onclick="limpiarPizarra('dictado')">Limpiar escritura</button>
+</div>
+<script>
+/* ---------- UTILIDADES DE SECCIONES ---------- */
+function mostrarSeccion(sec){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.getElementById(sec).classList.add('active');
+  document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active',b.dataset.section===sec));
+}
+/* ---------- DATOS ABECEDARIO ---------- */
+const datos={A:{palabra:"Árbol"},B:{palabra:"Ballena"},C:{palabra:"Casa"},D:{palabra:"Dado"},E:{palabra:"Elefante"},F:{palabra:"Flor"},G:{palabra:"Gato"},H:{palabra:"Helado"},I:{palabra:"Isla"},J:{palabra:"Jirafa"},K:{palabra:"Koala"},L:{palabra:"León"},M:{palabra:"Manzana"},N:{palabra:"Nube"},O:{palabra:"Oso"},P:{palabra:"Pato"},Q:{palabra:"Queso"},R:{palabra:"Ratón"},S:{palabra:"Sol"},T:{palabra:"Tigre"},U:{palabra:"Uva"},V:{palabra:"Vaca"},W:{palabra:"Waffle"},X:{palabra:"Xilófono"},Y:{palabra:"Yate"},Z:{palabra:"Zorro"}};
+const letraG=document.getElementById('letra-grande');
+const palabraG=document.getElementById('palabra');
+const imgReal=document.getElementById('imagen-real');
+const imgFalsa=document.getElementById('imagen-falsa');
+const feedback=document.getElementById('feedback');
+/* Crear botones letras */
+const letrasContainer=document.getElementById('letras-container');
+Object.keys(datos).forEach(l=>{const b=document.createElement('button');b.textContent=l;b.className='letra-btn';b.onclick=()=>mostrarLetra(l);letrasContainer.appendChild(b)});
+function mostrarLetra(l){
+  letraG.textContent=l;
+  palabraG.textContent=datos[l].palabra;
+  feedback.textContent='';
+  imgReal.src=`imagenes/${l}.png`;
+  const otras=Object.keys(datos).filter(x=>x!==l);
+  const falsa=otras[Math.floor(Math.random()*otras.length)];
+  imgFalsa.src=`imagenes/falsa/${falsa}.png`;
+  imgReal.onclick=()=>seleccionarImagen(true);
+  imgFalsa.onclick=()=>seleccionarImagen(false);
+  hablarLetra(l);
+}
+function seleccionarImagen(ok){feedback.textContent=ok?'¡Correcto! 👍':'Intenta otra vez ❌';}
+function hablarLetra(l){const u=new SpeechSynthesisUtterance(`${l}, de ${datos[l].palabra}`);u.lang='es-ES';u.rate=0.9;window.speechSynthesis.cancel();window.speechSynthesis.speak(u);} 
+/* ---------- PIZARRAS DIBUJO ---------- */
+function activarPizarra(id){const c=document.getElementById(id);const ctx=c.getContext('2d');ctx.lineWidth=3;ctx.lineCap='round';ctx.strokeStyle='#4a148c';let dib=false,px=0,py=0;function pos(e){const r=c.getBoundingClientRect();return[(e.touches?e.touches[0].clientX:e.clientX)-r.left,(e.touches?e.touches[0].clientY:e.clientY)-r.top];}
+  c.addEventListener('mousedown',e=>{dib=true;[px,py]=pos(e)});
+  c.addEventListener('touchstart',e=>{dib=true;[px,py]=pos(e);e.preventDefault()},{passive:false});
+  c.addEventListener('mousemove',e=>{if(!dib)return;const[x,y]=pos(e);ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(x,y);ctx.stroke();[px,py]=[x,y]});
+  c.addEventListener('touchmove',e=>{if(!dib)return;const[x,y]=pos(e);ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(x,y);ctx.stroke();[px,py]=[x,y];e.preventDefault()},{passive:false});
+  ['mouseup','mouseout','touchend','touchcancel'].forEach(ev=>c.addEventListener(ev,()=>dib=false));}
+activarPizarra('pizarra-abc');
+activarPizarra('pizarra-dictado');
+function limpiarPizarra(nombre){const c=document.getElementById('pizarra-'+nombre);c.getContext('2d').clearRect(0,0,c.width,c.height);} 
+/* ---------- SUMAS / RESTAS ---------- */
+function generarEjercicios(colId,cant,op){const col=document.getElementById(colId);col.innerHTML='';for(let i=0;i<cant;i++){let a=Math.floor(Math.random()*10),b=Math.floor(Math.random()*10);if(op==='-'&&b>a){[a,b]=[b,a];}const res=op==='+'?a+b:a-b;const div=document.createElement('div');div.className='ejercicio';div.innerHTML=`${a} ${op} ${b} = <input type='number' data-respuesta='${res}'>`;col.appendChild(div);} }
+function generarSumas(){generarEjercicios('suma-columna-1',5,'+');generarEjercicios('suma-columna-2',5,'+');}
+function generarRestas(){generarEjercicios('resta-columna-1',5,'-');generarEjercicios('resta-columna-2',5,'-');}
+function verificarTodas(tipo){const cols=tipo==='suma'?['suma-columna-1','suma-columna-2']:['resta-columna-1','resta-columna-2'];cols.forEach(id=>{document.querySelectorAll(`#${id} input`).forEach(inp=>{const ok=parseInt(inp.value)==inp.dataset.respuesta;inp.style.backgroundColor=ok?'#c8e6c9':'#ffcdd2';})});}
+/* ---------- DICTADO ---------- */
+const oraciones=["Ana ama a su mamá.","El gato come.","La casa es azul.","Yo veo un pez.","Papá lee el libro.","El sol brilla hoy.","Mi oso es gris.","La flor es rosa.","Tomás salta alto.","La gata duerme."];
+let idxDic=0;
+function nuevoDictado(){idxDic=(idxDic+1)%oraciones.length;limpiarPizarra('dictado');escucharDictado();}
+function escucharDictado(){const u=new SpeechSynthesisUtterance(oraciones[idxDic]);u.lang='es-ES';u.rate=0.8;window.speechSynthesis.cancel();window.speechSynthesis.speak(u);} 
+/* ---------- INICIO ---------- */
+window.addEventListener('DOMContentLoaded',()=>{mostrarLetra('A');generarSumas();generarRestas();});
+</script>
+</body>
+</html>
